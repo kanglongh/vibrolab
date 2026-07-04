@@ -1,0 +1,47 @@
+Byte-compiled / cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Cython build artifacts
+build/
+*.c
+*.so
+*.pyd.orig
+
+# Data - never commit raw CWRU or any signal data
+data/*.mat
+data/*.npz
+data/*.csv
+!data/README.md
+
+# Outputs
+# 实验产物 (CSV/PNG/MD/TXT) 是仓库价值的一部分, 允许进 git.
+# 只挡掉临时对照实验和缓存.
+outputs/cache/
+outputs/scratch/
+outputs/*.npz
+
+# Scratch scripts (对照实验, 不进 git)
+experiments/scratch_*.py
+
+# Local model weights
+llm/models/
+llm/weights/
+*.safetensors
+*.bin
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.env
+venv/
+.venv/

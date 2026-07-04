@@ -1,0 +1,9 @@
+﻿classifier,cv_type,mean_acc,std_acc
+SVM-RBF,window-level,1.0,0.0
+LinearSVM,window-level,1.0,0.0
+LR,window-level,1.0,0.0
+KNN,window-level,1.0,0.0
+SVM-RBF,mixed-load leave-file-out (3-fold),0.9976759628154049,0.003286684905913565
+LinearSVM,mixed-load leave-file-out (3-fold),0.99933598937583,0.0009390528302610185
+LR,mixed-load leave-file-out (3-fold),0.9970119521912352,0.004225737736174583
+KNN,mixed-load leave-file-out (3-fold),0.996991223817253,0.0035333007619651265

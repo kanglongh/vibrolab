@@ -1,0 +1,9 @@
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+pandas>=2.0
+matplotlib>=3.7
+transformers>=4.43
+torch>=2.0
+# 可选: 云端 LLM 后端 (OpenAI-Compatible; 用于 exp06b_llm_diagnosis_api.py)
+# openai>=1.30

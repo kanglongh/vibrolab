@@ -1,0 +1,35 @@
+vibrolab · 边缘部署规格卡
+============================================================
+环境: AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD
+      Python 3.12.8, 单核 CPU, 无 GPU
+窗口: 2048 采样点 @ 12 kHz  (等效 170.7 ms 物理时长)
+
+[单窗口端到端延迟 (batch=1, 100 次采样)]
+  分类器             median         p95   备注
+  SVM-RBF        0.96 ms     1.21 ms
+  LinearSVM      0.66 ms     0.94 ms
+  LR             0.65 ms     0.92 ms
+  KNN            2.15 ms     2.57 ms
+
+[批量推理延迟 (batch=64, 每窗口平均)]
+  分类器          per-win median    per-win p95
+  SVM-RBF            0.568 ms       0.625 ms
+  LinearSVM          0.657 ms       0.754 ms
+  LR                 0.668 ms       0.781 ms
+  KNN                0.626 ms       0.709 ms
+
+[部署产物大小 (pickle 序列化)]
+  分类器           scaler     model    index     total
+  SVM-RBF       1.4 KB   68.8 KB    470 B   70.6 KB
+  LinearSVM     1.4 KB    3.9 KB    470 B    5.7 KB
+  LR            1.4 KB    2.4 KB    470 B    4.2 KB
+  KNN           1.4 KB  107.4 KB    470 B  109.2 KB
+
+[推荐部署组合]
+  最快: LR  (0.65 ms/window, 4.2 KB)
+  最小: LR  (4.2 KB, 0.65 ms/window)
+
+[结论]
+  · 单窗口端到端 < 10 ms, 满足 100 Hz 实时决策场景
+  · 部署产物 < 1 MB, 可嵌入边缘网关 / ARM Cortex-A 级设备
+  · 运行时依赖: numpy + scikit-learn, 可打包为独立 executable

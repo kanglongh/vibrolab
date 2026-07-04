@@ -1,0 +1,17 @@
+﻿方法,类别,精度%,来源,备注
+CDHM,深度 DA (SOTA),99.69,CDHM [2],因果解耦
+AMDA,深度 DA (SOTA),99.52,AMDA [3],多目标域对抗
+Bot-40 + KNN (本文),"特征选择 (零训练, 零标注)",99.35,本文 exp03,"10 类, 0HP→3HP"
+Bot-40 + SVM-RBF (本文),"特征选择 (零训练, 零标注)",98.96,本文 exp03,"10 类, 0HP→3HP"
+DCTLN,深度 DA (SOTA),98.92,CDHM [2],"Guo et al., 2019"
+DCDAN,深度 DA (SOTA),98.87,DCDAN [1],MMD + 域判别器
+Bot-40 + LR (本文),"特征选择 (零训练, 零标注)",98.83,本文 exp03,"10 类, 0HP→3HP"
+DANN,深度 DA (对抗),97.82,CDHM [2],梯度反转层
+Deep CORAL,深度 DA,97.52,AMDA [3],CNN + CORAL loss
+DDC (MMD),深度 DA,92.33,DCDAN [1],CNN + MMD 对齐
+Bot-40 + LinearSVM (本文),"特征选择 (零训练, 零标注)",89.34,本文 exp03,"10 类, 0HP→3HP"
+TCA,浅层 DA (对齐),86.56,DCDAN [1],手工特征 + TCA
+JDA,浅层 DA (对齐),82.23,AMDA [3],手工特征 + JDA
+CNN (无 DA),深度基线 (无迁移),80.5,DCDAN [1],10 类
+全 120 维 + SVM-RBF (本文基线),传统 SVM (无 DA),78.93,本文 exp03,"10 类, 0HP→3HP"
+CORAL,浅层 DA (对齐),49.21,AMDA [3],手工特征 + CORAL
