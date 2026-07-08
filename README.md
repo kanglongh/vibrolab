@@ -5,8 +5,6 @@
 
 https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video1_iepe_baseline.mp4
 
-<video src="https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video1_iepe_baseline.mp4" controls width="100%"></video>
-
 *板子实时诊断: OLED 顶端波形, 中间中文标签 (正常/内圈007/外圈007…), 底部置信度条 + 延迟数值. 完整故事 + 4 段传感器降级对照视频见 [`firmware_v1_5/README.md`](firmware_v1_5/README.md).*
 
 ---
