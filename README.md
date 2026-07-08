@@ -1,17 +1,22 @@
 # vibrolab
 
-> **工业振动信号跨工况故障诊断全链路工具库**
-> CWRU 轴承 · 10 类 · 0HP → 3HP 跨负载 · 无监督特征预对齐
+> **把跨工况故障诊断塞进 ESP32-S3, 整机 BOM ~40 元, 单窗推理 0.6 ms.**
+> CWRU 10 类 · 双工况训练 → 全 4 工况泛化 100% · 2 KB 模型跑在 40 元级开发板 (ESP32-S3-DevKitC-1 ~24 元 + OLED ~10 元 + 线材)
+
+https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video1_iepe_baseline.mp4
+
+*板子实时诊断: OLED 顶端波形, 中间中文标签 (正常/内圈007/外圈007…), 底部置信度条 + 延迟数值. 完整故事 + 4 段传感器降级对照视频见 [`firmware_v1_5/README.md`](firmware_v1_5/README.md).*
 
 ---
 
 ## 30 秒定位
 
-- **跨工况精度**: 全 120 维基线 78.93% → Bot-40 稳定子集 **98.96%** (SVM-RBF, 0HP→3HP)
-- **12 任务矩阵**: 4 路分类器平均 **98.6% ~ 99.4%**, 最差单点 89% (LinearSVM · 0HP→3HP)
-- **流式部署**: 只需 **5% 目标域预热样本** (约 38 个窗口, 相当于新设备运行 6 到 7 秒)
-- **边缘规格**: 单窗口推理 **<1 ms** (LR/LinearSVM), 部署产物 **4.2 KB**, 无 GPU 依赖
-- **一键复现**: `python experiments/99_run_all.py`, CPU 约 2 分钟
+- **实物部署**: **2 KB** 模型烧进 ESP32-S3, 单窗推理 **0.6 ms**, 整机 BOM ~40 元 (开发板 + OLED + 线). 见 [firmware_v1_5](firmware_v1_5/README.md).
+- **跨工况精度**: 0+3HP 双工况训练 → **held-out 1/2HP 也 100%**. CWRU 12 任务矩阵均值 **98.6%–99.4%**, 最差单点 89%.
+- **传感器边界** (软件降级模拟, exp17): IEPE (万元级) 100% · ADXL1002 (工业 MEMS) **99.80%** · ADXL355 38.98% · MPU6050 10.17%. 结论: **带宽是硬约束, 便宜工业 MEMS 撑得住**.
+- **算法效率**: **3 KB** 模型 vs 深度 DA (DCDAN/AMDA 类) **1–2 MB 要 GPU 塞不进 MCU**; 浅层 CORAL 118 KB 但跨工况精度 49.21%. vibrolab 是同精度下最小、能进 MCU 的方案. 详见 [效率对照](#效率对照--vs-主流迁移学习方法-exp15).
+- **诚实的边界**: exp09 阴性结果 (未见损伤尺寸外推崩塌) 主动列出; ADXL1002 99.80% 是软件模拟, 真机预期 90–95%. 见 [已知局限](#已知局限).
+- **一键复现**: `python firmware_v1_5/train_export_model.py` (~10s 出 model.h) 或 `python experiments/99_run_all.py` (~2min 全实验).
 
 ---
 
@@ -36,13 +41,86 @@
 
 ---
 
+## 效率对照 · vs 主流迁移学习方法 (exp15)
+
+跨工况轴承诊断的迁移学习方法, 按计算效率排:
+
+![TL方法效率谱](outputs/figures/fig9_tl_efficiency.png)
+
+| 迁移学习方法 | 模型体积 | 推理/窗 | 能否进 MCU | 3HP 精度 |
+|---|---:|---:|:---:|---:|
+| **vibrolab (Bot-40+LR)** | **3 KB** | 0.06 ms | 能 (ESP32) | 98.8% |
+| CORAL (浅层 DA) | 118 KB | 0.07 ms | 能 | 49.21% |
+| 1D-CNN / DCDAN / AMDA / CDHM (深度 DA) | 1–2 MB | 0.35–2 ms | 不能 | ~99% (要 GPU) |
+
+深度 DA 精度高, 但 1–2 MB 塞不进 MCU, 要 GPU. CORAL 体积够小能进 MCU, 但跨工况 49.21% (文献 [AMDA]; 本地复测 ~41%, 同结论). vibrolab 3 KB, 能进 ESP32 级 MCU 且精度不掉.
+
+数据: [`experiments/15b_tl_efficiency.py`](experiments/15b_tl_efficiency.py) (CORAL/vibrolab 实测), 1D-CNN 见 [`15a_efficiency_baseline.py`](experiments/15a_efficiency_baseline.py), 文献深度 DA 精度见 [`exp05_benchmark_table.csv`](outputs/exp05_benchmark_table.csv).
+
+---
+
+## 传感器需求 · 软件降级模拟 (exp17)
+
+算法效率解决了, 整机成本另一半在**传感器**. CWRU 数据用的是工业级 IEPE 压电加速度计 (PCB 353B33 类, 万元级). 直接部署真机需外接一支——软件对 CWRU 信号做降级 (加噪声 / 限带宽 / 降 ADC 位深), 模拟不同档次 MEMS 传感器测同一模型:
+
+| 传感器档 | 带宽 | 噪声底 | ADC | 成品单价 (RMB) | Held-out 精度 |
+|---|---:|---:|---:|---:|---:|
+| IEPE 基线 (PCB 353B33 类) | 6 kHz | 4 μg/√Hz | — | 3000-10000 | **100.00%** |
+| **ADXL1002 成品** (工业 MEMS) | 11 kHz | 25 μg/√Hz | 12-bit @ ±50g | 500-800 | **99.80%** |
+| ADXL355 成品 (低带宽高精度 MEMS) | 1.9 kHz | 25 μg/√Hz | 20-bit @ ±8g | 700-1000 | 38.98% |
+| MPU6050 模块 (消费级 IMU) | 260 Hz | ~400 μg/√Hz | 16-bit @ ±16g | 50-200 | 10.17% |
+
+成品单价含: 芯片 + 调理电路 + 外壳 + 连接器 (MPU6050 是现成模块无工业外壳).
+量化采用**传感器固定量程 + ADC 固定位深**, 反映模拟输出→ADC 的自然物理链路 (信号仅占满量程约 10%, 有效量化 SNR 比"满量程 12-bit"低约 20 dB).
+
+- **ADXL1002 级 MEMS 完全撑得住** —— 99.80% 与 IEPE 基线基本打平, 相比 IEPE 传感器**便宜一个数量级**, 是本项目的关键工程可行点.
+- **ADXL355 反而崩了** —— 噪声底更低但**带宽只有 1.9 kHz**, 把 2–5 kHz 的轴承高频冲击信号滤掉了. **带宽比噪声底更关键**.
+- **MPU6050 消费级 IMU 彻底不行** —— 默认 DLPF 配置下带宽仅 260 Hz, 精度掉到 10 类随机猜的水平 (10%).
+
+**意味着整机 BOM (MCU ~24 + OLED ~10 + ADXL1002 成品 ~600 + 附件) 约 700-900 元档就能撑起 vibrolab 的算法**——对比工业 CMS 系统单点上万到十万, 成本差 1-2 个数量级.
+
+⚠️ 这是软件降级模拟, 不代表真机接入的最终精度. 真机部署还有:
+- **ADXL1002 模拟输出接 ESP32 ADC** 的运放前端设计 + ESP32 内置 ADC 有效位数 (ENOB ~8-9 bit, 低于名义 12-bit) + 采样时序抖动
+- **传感器安装耦合** (磁座 vs 螺纹差 3-6 dB) 与温漂 (工业环境 -20 到 +80°C)
+- **EMI 干扰** (变频器附近的强电磁环境)
+- **跨机器 domain shift** (CWRU 台架 vs 你的机器可能特征分布本身就不一样)
+
+综合下来预期精度会从模拟的 99.80% 掉到 **90-95% 范围** (同类机型) 或更低 (跨机型). 见 [`experiments/17_sensor_degradation.py`](experiments/17_sensor_degradation.py) 可复现模拟部分, 真机接入是后续工作.
+
+---
+
 ## 关于本项目
 
-我是燕山大学机械工程学院 2027 届硕士研究生, 研究方向是**故障诊断**, 具体做**液压柱塞泵**的故障诊断——这是我独立完成的毕业课题, 从选题、方法到实现都没有导师或师兄给现成的思路. 那边的工作走的是**物理特征提取 + 传统机器学习**这一路: 不追求 SOTA, 追求在小样本、跨工况、可解释的前提下把工程指标做扎实.
+我是燕山大学机械工程学院 2027 届硕士, 独立课题做**液压柱塞泵故障诊断**, 走**物理特征 + 传统 ML** 这一路——追求小样本、跨工况、可解释, 不追 SOTA.
 
 做完柱塞泵的主线之后, 我一直好奇一个问题: **这套方法到底是我针对柱塞泵调出来的偶然, 还是它反映了旋转/流体机械故障诊断的某种通用范式?** 光在同一份数据上跑证明不了这个问题——那是**内部一致性**, 不是**外部有效性**. 所以我拿了轴承故障诊断领域的标准基准 (CWRU), 把整套流水线原封不动地搬过去, 看能不能拿到同一量级的精度.
 
 **这个仓库就是这次迁移验证的完整记录**——数据、代码、CSV、图表、部署规格、LLM 接口示例全部公开可复现. 简历上如果只写一行"跨工况诊断 X%", 读者会怀疑这个数字是不是造出来的; 但把整套流程、每一个数字、每一个阴性结果 (见 [exp09](outputs/VERIFICATION.md)) 都放到 GitHub 上, 至少证明**我这套方法不是柱塞泵专属的偶然**.
+
+---
+
+## 作者的碎碎念 (可跳过)
+
+上集说到, 我本职做柱塞泵故障诊断. 想到这套方法是否能外推到轴承, 于是做了一系列尝试, 最后核算计算成本, 结论是可以边缘部署到 MCU 上.
+
+但只提想法看不到实物, 心里没底, 就吃不下饭睡不着觉. 就怕别人说:
+> "吹牛逼嘞. 学界故障诊断都用神经网络深度学习, 甚至有人在准备用大模型做. 诊断通用模型马上就来, 以后是大模型的天下, 你拿着淘汰了 20 多年的信号处理就想打? 未免太过不自量力."
+
+这个我无从辩驳. 但有几个点得说清楚:
+
+**关于"深度学习吊打传统方法"这件事.** 神经网络确实好用, 只需要调参调包, 就能画一条不错的拟合曲线, 拿到很不错的精度 (100%). 但吊诡的事出在这里——我拿传统方法组合出一个新架构, 结果也能达到同数量级. 拿着这个结果我再回头看, 就看见了之前看不见的东西. 我愿称之为**数据集工程**: 当数据集本身就易分的时候, 用什么方法都无所谓. 就像小学期末考试, 小学生能拿满分, 大学生也能拿满分——你能因此说大学生很厉害吗? 题太简单, 谁都可以.
+
+CWRU 数据集学界已经做透了. 因此我在这里做的只是**验证**, 真让我发刊说这个我不敢. 事实上我拿课题组的私有柱塞泵数据集 (3 组泵) 做尝试, 结果也很吊诡: 单工况分类精度随随便便就 100%. 我把它归因到**数据集可分性太强**——真正的瓶颈在跨域精度, 那才是深度学习真正发力的地方.
+
+**所以这个开源实验报告, 是我针对跨域的尝试.**
+
+别看着报告好像还行, **它其实是失败的**. 别问为什么不发刊, 问就是不想走学术界了. 我这个方法没什么创新, 就是把坟墓里的尸体抬出来, 化个妆来打——本来是想拿它做基线对比的, 结果被打崩了, 不得不感慨老祖宗还是老祖宗啊. (当然我这里的"失败"指的是在**我私人的数据集**上; CWRU 这套跑得很干净, 报告里的论证不受影响. 这段是碎碎念, 看看就好, 不严谨的地方在所难免.)
+
+**另一个亮点: 大模型的文本解释.** 这里又有个小知识点—**大模型可以做分类器吗?** 其实可以 (我师兄证明了), 但严格意义下不够好, 至少在我的场景下没能体现出这个优势. 没错, 就是大模型被打崩了. 于是我痛定思痛, 发现是**我的应用场景错了**: 大模型不该做分类器. 它可以做**解释器**, 也可以做 **Agent** (对, 现在已经有人在做故障诊断 Agent 了). 给它的 skill 足够多, 它甚至可以泛用到任何一个领域的故障诊断 (有很多人在做, 我也在尝试). 所以以后的故障诊断范式, 逃不了这个命运.
+
+**反过来想, 这就是时代的浪潮.** 我也就觉得学术界待不下去了——所有研究领域最后都会指向大模型, 我们能做的常态研究, 也只是给大模型加一个 skill.
+
+因此我做了一个转向: **把故障诊断拉到工业界, 用极致的性价比, 去达到最好的结果**. 这就是本项目的核心理念.
 
 ---
 
@@ -52,7 +130,7 @@
 pip install -r requirements.txt
 ```
 
-下载 CWRU 数据集到 `../Data/` 目录下 (`Normal` 和 `12k_DE` 两个子文件夹), 然后一键跑完所有实验:
+下载 CWRU 数据集到 `data/` 目录下 (`Normal` 和 `12k_DE` 两个子文件夹, 详见 [`data/README.md`](data/README.md)), 然后一键跑完所有实验:
 
 ```bash
 python experiments/99_run_all.py
@@ -60,7 +138,7 @@ python experiments/99_run_all.py
 
 产物落在 [`outputs/`](outputs/) 文件夹下:
 - 10 个实验的 CSV 数据表
-- 8 张结果图 (`outputs/figures/`)
+- 9 张结果图 (`outputs/figures/`)
 - 完整验证报告 [`VERIFICATION.md`](outputs/VERIFICATION.md)
 - 部署规格卡 [`exp12_deploy_spec.txt`](outputs/exp12_deploy_spec.txt)
 - LLM 诊断接口示例产物 [`exp06_diagnosis_report.md`](outputs/exp06_diagnosis_report.md) 和 [`exp06b_diagnosis_report_api.md`](outputs/exp06b_diagnosis_report_api.md)
@@ -102,6 +180,8 @@ sklearn 分类器 (SVM-RBF / LinearSVM / LR / KNN, 四路平行对照)
 
 4 路分类器在全部 12 个 (源, 目标) 组合上的 Bot-40 精度. 平均 98.6% 到 99.4%, 最差单点约 89%.
 
+> **和 v1.5 硬件 demo 100% 精度不冲突**: 这里是**单工况训练 → 单工况测试**的严格评估 (最悲观协议, 提供下界); v1.5 硬件用**双工况 (0+3HP) 合训**给模型跨工况多样性, 泛化到 1HP/2HP 的插值场景, 因此精度更高. 两个数测的是不同的东西.
+
 ### 流式部署 Prequential 验证 (exp08)
 
 ![Prequential 衰减](outputs/figures/fig6_prequential_curve.png)
@@ -142,6 +222,20 @@ sklearn 分类器 (SVM-RBF / LinearSVM / LR / KNN, 四路平行对照)
 
 **综合选型**: LR 单窗口延迟最短、部署产物最小、12 任务平均精度最高 (99.41%)、方差最小——这是本流水线的默认推荐选型.
 
+### 实物部署 · ESP32-S3 流式诊断 (firmware v1.5)
+
+上面是 PC 上的延迟数. 真烧进 ESP32-S3 跑: **2 KB 模型 (LR + Bot-40), 推理 0.6 ms**, 流式收窗逐窗诊断. 训练用 0+3HP 双工况, 现场流式发任意工况 (含 held-out 1/2HP) 全泛化 100%. **输入可自定义** (工况组合 / 打乱 / 种子) → 可复现 → 可信.
+
+板子上完整流程 (每窗 ~5.6 ms):
+```
+2048 点原始信号 → 120 维 CFD 特征 (float32 FFT, ~5 ms)
+                → Bot-40 选维 + 标准化 (~50 μs)
+                → LR 10 类 (~0.6 ms, 40×10 点积 + argmax)
+                → OLED 波形+中文标签+置信度条 · 串口回诊断
+```
+
+完整故事 + 4 段传感器降级对照视频 (IEPE / ADXL1002 / ADXL355 / MPU6050) 见 [`firmware_v1_5/README.md`](firmware_v1_5/README.md).
+
 ### 部署侧调用示意
 
 训练侧完成后, 生产端调用只需 3 行:
@@ -180,33 +274,53 @@ label = clf.predict(sc.transform(feat[:, bot40]))[0]
 ```
 vibrolab/
 ├── vibrolab/                        # 核心 Python 包
+│   ├── __init__.py
 │   ├── io.py                        # CWRU 数据加载 + 滑窗切分
 │   ├── features.py                  # 120 维 CFD 特征 + Cohen's d 预对齐
 │   └── paths.py                     # 路径管理
 ├── llm/                             # LLM 后端 (本地 / OpenAI-Compatible 云端)
+│   ├── README.md
+│   ├── __init__.py
 │   ├── backends.py
 │   └── prompts/diagnosis_zh.txt
-├── experiments/                     # 11 个实验脚本 + 一键运行入口
+├── experiments/                     # 15 个实验脚本 + 一键运行入口
 │   ├── 02_within_condition.py       # 同工况基线 (5-fold + 留一文件)
 │   ├── 03_cross_condition.py        # 跨工况: 精度断崖与 Bot-40 修复
-│   ├── 04_plots.py                  # exp02/03 出图
-│   ├── 05_literature_benchmark.py   # 与主流方法对比
+│   ├── 04_plots.py                  # exp02/03 出图 (fig1-fig3)
+│   ├── 05_literature_benchmark.py   # 与主流方法对比 (fig4)
 │   ├── 06_llm_diagnosis.py          # LLM 接口 (本地后端)
 │   ├── 06b_llm_diagnosis_api.py     # LLM 接口 (云端 API 后端)
 │   ├── 07_all_12_tasks.py           # 12 任务全负载矩阵
 │   ├── 08_prequential.py            # 流式部署 Prequential 验证
-│   ├── 09_leave_diameter_out.py     # 未见损伤尺寸外推 (阴性)
+│   ├── 09_leave_diameter_out.py     # 未见损伤尺寸外推 (阴性结果)
 │   ├── 10_noise_robustness.py       # 加噪声鲁棒性
-│   ├── 11_verification_plots.py     # exp07-10 出图
+│   ├── 11_verification_plots.py     # exp07-10 出图 (fig5-fig8)
 │   ├── 12_edge_latency.py           # 边缘部署延迟与产物规格
+│   ├── 15a_efficiency_baseline.py   # 1D-CNN 效率基线实测
+│   ├── 15b_tl_efficiency.py         # TL 方法效率谱 (fig9)
+│   ├── 17_sensor_degradation.py     # 传感器降级模拟 (IEPE/ADXL1002/ADXL355/MPU6050)
 │   └── 99_run_all.py                # 一键跑完所有
+├── firmware_v1_5/                   # ESP32-S3 实物部署 (v1.5)
+│   ├── README.md                    # 硬件 demo 完整故事 + 4 段传感器降级视频
+│   ├── train_export_model.py        # 入口: CWRU → Bot-40 → LR → 导出 model.h
+│   ├── firmware_v1_5.ino            # 板子主程序 (Arduino/PlatformIO)
+│   ├── fft.c                        # float32 FFT (镜像 Python 版)
+│   ├── fft.h
+│   ├── features.c                   # 120 维 CFD 特征提取 (镜像 Python 版)
+│   ├── features.h
+│   ├── infer.c                      # Bot-40 选维 + 标准化 + LR 推理
+│   ├── infer.h
+│   ├── model.h                      # 训练产物 (自动生成, ~2 KB 数据)
+│   ├── stream_host.py               # PC 流式主机 (支持传感器降级模拟)
+│   ├── platformio.ini               # PlatformIO 配置 (可选)
+│   └── assets/                      # 实物运行视频 × 4 + 板子照片
 ├── outputs/                         # 实验产物
 │   ├── VERIFICATION.md              # 完整验证报告 (15 分钟深度阅读)
 │   ├── *.csv                        # 各实验数据
-│   ├── figures/                     # 8 张结果图
+│   ├── figures/                     # 9 张结果图 (fig1-fig9)
 │   ├── exp12_deploy_spec.txt        # 边缘部署规格卡
 │   └── exp06*_diagnosis_report*.md  # LLM 接口示例产物
-├── data/                            # 数据存放说明 (CWRU .mat 不在 git 内)
+├── data/                            # 数据存放位置 (CWRU .mat 不在 git 内, 见 data/README.md)
 ├── .env.example                     # 云端 LLM 环境变量模板
 ├── requirements.txt
 └── LICENSE

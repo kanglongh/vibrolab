@@ -12,6 +12,9 @@ Experiment 99 · 一键运行全链路.
     10 · 加噪声鲁棒性
     11 · exp07-10 出图 (fig5-fig8)
     12 · 边缘部署延迟与产物规格
+    15a · 1D-CNN 效率基线实测
+    15b · TL 方法效率谱 (fig9)
+    17 · 传感器降级模拟 (IEPE/ADXL1002/ADXL355/MPU6050)
     06 · LLM 诊断解释接口示例 (可选)
 
 跑完后, outputs/ 下会有完整的 CSV / Markdown 报告 / PNG 图集.
@@ -39,6 +42,9 @@ STEPS = [
     ('10_noise_robustness.py',    'Noise robustness (AWGN sweep)'),
     ('11_verification_plots.py',  'Verification plots (fig5-fig8)'),
     ('12_edge_latency.py',        'Edge deployment latency & artifact footprint'),
+    ('15a_efficiency_baseline.py','1D-CNN efficiency baseline (PyTorch)'),
+    ('15b_tl_efficiency.py',      'TL method efficiency spectrum (fig9)'),
+    ('17_sensor_degradation.py',  'Sensor degradation simulation (MEMS tiers)'),
     ('06_llm_diagnosis.py',       'LLM diagnosis explanation interface (optional)'),
 ]
 
@@ -67,7 +73,7 @@ def main():
     print('vibrolab · Full pipeline')
     print('=' * 70)
     print(f'This will run {len(STEPS)} experiments end-to-end.')
-    print('Estimated time: ~2-3 minutes for exp02-05/07-11 (CPU), + ~1 min for exp06 (LLM).')
+    print('Estimated time: ~3-5 minutes for exp02-12 (CPU), + ~1 min for exp15a (1D-CNN training), + ~1 min for exp06 (LLM).')
     print('Outputs: outputs/ (CSV + Markdown reports + PNG figures)')
 
     t_all = time.time()

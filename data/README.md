@@ -10,11 +10,12 @@
 
 ## 目录组织
 
-将 `Data/` 文件夹放到本项目**上层目录**, 结构如下:
+把 `Normal/` 和 `12k_DE/` 两个子文件夹直接放到本 `data/` 目录下, 结构如下:
 
 ```
-GitHub/                          # 或任何你的上层目录
-├── Data/                        # ← 从 CWRU 下载, 只需下面这两个子文件夹
+vibrolab/                        # 本项目根
+├── data/                        # ← 你在这里
+│   ├── README.md                # (本文件)
 │   ├── Normal/                  # 4 个正常样本 (0/1/2/3 HP 负载各一)
 │   │   ├── Normal_0.mat
 │   │   ├── Normal_1.mat
@@ -24,15 +25,18 @@ GitHub/                          # 或任何你的上层目录
 │       ├── B007_0.mat           # B/IR/OR × 007/014/021/028 尺寸 × 0/1/2/3 HP
 │       ├── ...
 │       └── OR021@6_3.mat
-│
-└── vibrolab/                    # 本项目
+├── vibrolab/                    # Python 包
+├── experiments/                 # 实验脚本
+└── firmware_v1_5/               # 边缘部署
 ```
 
 **只需要 `Normal/` 和 `12k_DE/` 两个文件夹** (合计 ~187 MB). CWRU 原始压缩包里还有 `12k_FE/` (风扇端) 和 `48k_DE/` (高采样率), 本项目不使用.
 
+`.gitignore` 会自动挡住 `data/**/*.mat`, 数据文件不会被 git 追踪.
+
 ## 自定义数据路径
 
-若你的 `Data/` 不在项目上层目录, 通过环境变量指定:
+若你的数据不想放在 `data/`, 通过环境变量指定:
 
 ```bash
 # Linux/macOS
@@ -40,6 +44,9 @@ export CWRU_DATA_ROOT=/path/to/your/CWRU/Data
 
 # Windows PowerShell
 $env:CWRU_DATA_ROOT = "C:\your\path\to\CWRU\Data"
+
+# Windows CMD
+set CWRU_DATA_ROOT=C:\your\path\to\CWRU\Data
 
 # 然后运行
 python experiments/99_run_all.py

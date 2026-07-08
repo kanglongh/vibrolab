@@ -27,9 +27,9 @@ import scipy.io
 
 from .paths import ROOT
 
-# CWRU 数据默认路径 (相对 vibrolab/ 上层)
+# CWRU 数据默认路径 (仓库内 data/ 目录, 与 data/README.md 一致)
 # 用户可通过环境变量 CWRU_DATA_ROOT 覆盖
-_default_data_root = ROOT.parent / 'Data'
+_default_data_root = ROOT / 'data'
 DATA_ROOT = Path(os.environ.get('CWRU_DATA_ROOT', str(_default_data_root)))
 
 FS_12K = 12000    # 采样率 (Hz)
