@@ -58,13 +58,20 @@ class CWRUSample:
 
 
 def _extract_de_signal(mat_dict: dict) -> np.ndarray:
-    """从 .mat 字典里找 _DE_time 后缀的字段, 返回一维信号."""
-    for key, val in mat_dict.items():
-        if key.startswith('__'):
-            continue
-        if key.endswith('_DE_time'):
-            return np.asarray(val).squeeze()
-    raise KeyError(f"No *_DE_time field in mat: keys={list(mat_dict)}")
+    """从 .mat 字典里找 _DE_time 后缀的字段, 返回一维信号.
+
+    CWRU Normal_2.mat 存在历史遗留问题: 内含 X098 (1HP 数据残留) 和
+    X099 (真实 2HP 数据) 两组 _DE_time. scipy.io.loadmat 返回的键顺序
+    里 X098 排在前面, 简单取"第一个匹配"会读到污染数据.
+
+    修复策略: 取字典序最大的 DE 键 (Normal_2 里 X099 > X098, 保证读真实
+    2HP 数据). 其他文件通常只有一个 DE 键, 不受影响.
+    """
+    de_keys = [k for k in mat_dict
+               if not k.startswith('__') and k.endswith('_DE_time')]
+    if not de_keys:
+        raise KeyError(f"No *_DE_time field in mat: keys={list(mat_dict)}")
+    return np.asarray(mat_dict[sorted(de_keys)[-1]]).squeeze()
 
 
 def _parse_filename(fname: str) -> tuple:

@@ -14,7 +14,7 @@
 ## 30 秒定位
 
 - **实物部署 (上位机模式)**: **2 KB** 模型烧进 ESP32-S3, 单窗推理 **0.6 ms**, 算力侧 BOM ~40 元 (开发板 + OLED + 线). **注意**: 信号由 PC 从 CWRU .mat 流式喂入板子, 板子做**特征提取 + 推理 + OLED 显示**全链路 (这条链是真在板子上跑的); **传感器实时采集前端 (ADC + 运放 + 耦合) 尚未闭环**——即"推理侧已验证、采集侧待验证". 见 [firmware_v1_5](firmware_v1_5/README.md).
-- **跨工况精度**: 0+3HP 双工况训练 → **held-out 1/2HP 也 100%**. CWRU 12 任务矩阵均值 **98.6%–99.4%**, 最差单点 89%.
+- **跨工况精度**: 0+3HP 双工况训练 → **held-out 1/2HP 也 100%**. CWRU 12 任务矩阵均值 **98.1%–99.2%**, 最差单点 89%.
 - **传感器边界** (软件降级模拟, exp17): IEPE (万元级) 100% · ADXL1002 (工业 MEMS) **99.80%** · ADXL355 38.98% · MPU6050 10.17%. 结论: **带宽是硬约束, 便宜工业 MEMS 撑得住**.
 - **算法效率**: **3 KB** 模型 vs 深度 DA (DCDAN/AMDA 类) **1–2 MB 要 GPU 塞不进 MCU**; 浅层 CORAL 118 KB 但跨工况精度 49.21%. vibrolab 是同精度下最小、能进 MCU 的方案. 详见 [效率对照](#效率对照--vs-主流迁移学习方法-exp15).
 - **诚实的边界**: exp09 阴性结果 (未见损伤尺寸外推崩塌) 主动列出; ADXL1002 99.80% 是软件模拟, 真机预期 90–95%. 见 [已知局限](#已知局限).
@@ -182,7 +182,7 @@ sklearn 分类器 (SVM-RBF / LinearSVM / LR / KNN, 四路平行对照)
 
 ![12 任务热图](outputs/figures/fig5_12_task_heatmap.png)
 
-4 路分类器在全部 12 个 (源, 目标) 组合上的 Bot-40 精度. 平均 98.6% 到 99.4%, 最差单点约 89%.
+4 路分类器在全部 12 个 (源, 目标) 组合上的 Bot-40 精度. 平均 98.1% 到 99.2%, 最差单点约 89%.
 
 > **和 v1.5 硬件 demo 100% 精度不冲突**: 这里是**单工况训练 → 单工况测试**的严格评估 (最悲观协议, 提供下界); v1.5 硬件用**双工况 (0+3HP) 合训**给模型跨工况多样性, 泛化到 1HP/2HP 的插值场景, 因此精度更高. 两个数测的是不同的东西.
 
@@ -203,7 +203,7 @@ sklearn 分类器 (SVM-RBF / LinearSVM / LR / KNN, 四路平行对照)
 | [exp02](experiments/02_within_condition.py) | 同工况严格协议 (留一文件) 99.7%, 说明 CFD 表达力天花板高 |
 | [exp03](experiments/03_cross_condition.py) | 0HP→3HP 全 120 维 78.93% → Bot-40 98.96%, +20 pp 提升 |
 | [exp05](experiments/05_literature_benchmark.py) | 与 DCDAN / AMDA / CDHM 等深度 DA 方法同量级, 零训练 |
-| [exp07](experiments/07_all_12_tasks.py) | 12 任务矩阵均值 98.6% 到 99.4%, 非 cherry-picking |
+| [exp07](experiments/07_all_12_tasks.py) | 12 任务矩阵均值 98.1% 到 99.2%, 非 cherry-picking |
 | [exp08](experiments/08_prequential.py) | 5% 目标域预热已足够, 流式部署可行 |
 | [exp09](experiments/09_leave_diameter_out.py) | 未见损伤尺寸外推崩塌, 数据集天花板 |
 | [exp10](experiments/10_noise_robustness.py) | 信噪比 +10 dB 时全 120 维崩到 7.7%, Bot-40 保持 94%+ |
@@ -224,7 +224,7 @@ sklearn 分类器 (SVM-RBF / LinearSVM / LR / KNN, 四路平行对照)
 
 *窗口 = 2048 采样点 @ 12 kHz (等效 170.7 ms 物理时长), 推理耗时 <1% 窗口时长. 完整规格见 [`exp12_deploy_spec.txt`](outputs/exp12_deploy_spec.txt).*
 
-**综合选型**: LR 单窗口延迟最短、部署产物最小、12 任务平均精度最高 (99.41%)、方差最小——这是本流水线的默认推荐选型.
+**综合选型**: LR 单窗口延迟最短、部署产物最小、12 任务平均精度最高 (99.17%)、方差最小——这是本流水线的默认推荐选型.
 
 ### 实物部署 · ESP32-S3 流式诊断 (firmware v1.5)
 
