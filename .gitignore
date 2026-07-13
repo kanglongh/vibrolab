@@ -46,3 +46,8 @@ Thumbs.db
 *.env
 venv/
 .venv/
+
+# Video assets (托管在 GitHub user-attachments, 不进 git)
+firmware_v1_5/assets/*.mp4
+firmware_v1_5/assets/*.mov
+firmware_v1_5/assets/*.webm

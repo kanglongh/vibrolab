@@ -18,7 +18,7 @@
 
 <!-- [VIDEO 1: IEPE 传感器 · 全工况全量数据 · 板子实时诊断] -->
 
-https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video1_iepe_baseline.mp4
+https://github.com/user-attachments/assets/1c9bb68f-8bc0-4f8d-bb4d-63cfb33c54fd
 
 > **视频 1 · IEPE 基线** — 全 4 工况轮流跑, 板子实时诊断, OLED 显示波形 + 中文标签 + 置信度
 
@@ -30,7 +30,7 @@ https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video1_iepe_
 
 <!-- [VIDEO 2: ADXL1002 模拟降级 · 板子诊断依旧] -->
 
-https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video2_adxl1002.mp4
+https://github.com/user-attachments/assets/99b86a52-121a-4d29-880e-056733ed09a8
 
 > **视频 2 · ADXL1002 (工业 MEMS)** — 信号经软件降级模拟 ADXL1002 后发给板子, OLED 显示诊断基本一致
 
@@ -38,7 +38,7 @@ https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video2_adxl1
 
 <!-- [VIDEO 3: ADXL355 模拟降级 · 板子开始误判] -->
 
-https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video3_adxl355.mp4
+https://github.com/user-attachments/assets/8da2af3f-be5b-4e73-b846-f7d15ba4dd60
 
 > **视频 3 · ADXL355 (低带宽高精度 MEMS)** — 板子诊断出现红色 MISS, 置信度掉, 带宽杀故障签名
 
@@ -46,7 +46,7 @@ https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video3_adxl3
 
 <!-- [VIDEO 4: MPU6050 模拟降级 · 板子几乎瞎猜] -->
 
-https://github.com/kanglongh/vibrolab/raw/main/firmware_v1_5/assets/video4_mpu6050.mp4
+https://github.com/user-attachments/assets/d92f4862-c50b-4afa-9868-966a64cf7ced
 
 > **视频 4 · MPU6050 (消费级 IMU)** — 板子诊断基本随机, 接近 10 类瞎猜的 10%
 
